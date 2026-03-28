@@ -371,5 +371,20 @@ Such a dataset does not currently exist at scale.
 
 ---
 
+## 9. Relationship to the Aesthetic DSL
+
+A dedicated DSL proposal (`aesthetic_dsl_proposal.md`) specifies a structured intermediate
+representation that sits between natural language intent and numeric params. It directly
+addresses the control problem (§3) by giving the LLM a formal grammar to target rather than
+asking it to produce raw param values. Key connections:
+
+- The pyramid's level-2 relational properties (split-tone, shadow↔highlight contrast) are
+  expressible in DSL but not in flat params — DSL is the mechanism that unlocks level-2 control
+- The composition ceiling (§4) is handled via compiler annotations in the DSL, not silent failure
+- Reference image fingerprinting (§3c) produces a DSL program as its output, not a param blob
+- The DSL diff is what gets shown in the right panel — human-readable aesthetic intent, not raw numbers
+
+---
+
 *This proposal is intentionally open-ended. The goal is to name the problem space precisely
 enough to make good scope decisions during prototyping — not to close all questions upfront.*

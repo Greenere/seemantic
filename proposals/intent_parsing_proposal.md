@@ -20,6 +20,10 @@ Out of scope:
 
 ## 2. Model and API
 
+> **Note**: `aesthetic_dsl_proposal.md` specifies a DSL layer that replaces the raw param
+> output described here (milestone I4 / D6 in that proposal). Until the DSL is implemented,
+> this proposal's `propose_edit` tool and param output remain the active path.
+
 **Model**: `claude-sonnet-4-6` via the Anthropic API.
 
 Rationale: intent parsing requires nuanced language understanding (compound intent,
