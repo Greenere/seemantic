@@ -119,6 +119,18 @@ A human dragging a slider and an agent POSTing `{ "warmth": 0.72 }` produce iden
 
 ---
 
+## 3b. Undo model clarification
+
+Branches and undo are **distinct mechanisms**:
+
+- **Undo within a branch** (`Cmd+Z`) rolls back the last committed edit on the current branch. Each branch maintains a linear undo stack of its own commits. This is cheap: we just walk back `history` entries within that branch.
+- **Branch switching** is non-destructive navigation — it doesn't undo anything; it changes which branch is "current". Think of it as checking out a different git branch.
+- `dry_run` edits are **never** added to the undo stack, since they don't commit to state.
+
+The UI makes this explicit: the left-panel branch tree is for navigation; `Cmd+Z` / `Cmd+Shift+Z` acts on the current branch's linear stack only.
+
+---
+
 ## 4. Agent API (agent layer)
 
 ### Design principles
@@ -133,6 +145,41 @@ A human dragging a slider and an agent POSTing `{ "warmth": 0.72 }` produce iden
 ---
 
 ### Endpoints
+
+#### `POST /session`
+Create a new editing session by uploading or referencing an image. Returns a `session_id` used in all subsequent requests (via header or URL prefix).
+
+**Request** (multipart or JSON)
+```json
+{
+  "image_url": "https://...",   // OR use multipart file upload
+  "image_id": "mountain_dusk"   // optional human-readable label
+}
+```
+
+**Response**
+```json
+{
+  "session_id": "sess_abc123",
+  "image_id": "mountain_dusk",
+  "state": { "...initial state with no edits..." }
+}
+```
+
+All subsequent endpoints are scoped to a session. Prefix with `/session/{session_id}/` or pass `session_id` as a header.
+
+---
+
+#### `GET /export`
+Render and return the final image for the current (or specified) branch.
+
+**Query params**: `branch` (optional, defaults to current), `format` (`jpeg|png|tiff`), `quality` (1–100)
+
+**Response**: Binary image stream with appropriate `Content-Type`, or a JSON `{ "download_url": "..." }` for async rendering.
+
+Async behavior: if rendering takes >500ms, respond immediately with `{ "job_id": "...", "status": "pending" }` and emit a WebSocket event when done (see §4b).
+
+---
 
 #### `POST /edit`
 Apply an edit. Returns new state snapshot + diff.
@@ -217,6 +264,84 @@ Read the full current state. Always available; idempotent.
 
 ---
 
+#### `POST /variants`
+Generate N alternative edits from the current state (used to populate the variant strip).
+
+**Request**
+```json
+{
+  "branch_from": "edit_a2",
+  "count": 4,
+  "diversity": 0.3   // 0 = subtle variations, 1 = broad aesthetic range
+}
+```
+
+**Response**
+```json
+{
+  "variants": [
+    { "branch_id": "variant_a2_1", "diff": [...], "preview_url": "..." },
+    { "branch_id": "variant_a2_2", "diff": [...], "preview_url": "..." }
+  ]
+}
+```
+
+Each variant is a real branch in the tree — clicking a variant in the UI simply switches the current branch to it.
+
+---
+
+#### `POST /mask`
+Create a region mask, either from a painted path or a semantic label resolved via SAM.
+
+**Request**
+```json
+{
+  "type": "semantic",          // "semantic" | "brush" | "gradient"
+  "label": "sky",              // for "semantic" type
+  "brush_path": null,          // for "brush" type: array of {x, y, radius} strokes
+  "feather": 0.05              // edge softness, 0–1
+}
+```
+
+**Response**
+```json
+{
+  "mask_id": "mask_001",
+  "thumbnail_url": "...",
+  "coverage_pct": 0.34         // fraction of image pixels covered
+}
+```
+
+#### `GET /mask/{mask_id}`
+Returns mask metadata and thumbnail. The actual mask bitmap is served as a PNG at `thumbnail_url`.
+
+#### `DELETE /mask/{mask_id}`
+Removes a mask. Fails with `409` if any committed edit references this mask.
+
+---
+
+#### `GET /diff`
+Compare two branches and return a param-level diff.
+
+**Query params**: `branch_a`, `branch_b`
+
+**Response**
+```json
+{
+  "branch_a": "edit_a3",
+  "branch_b": "edit_b2",
+  "diff": [
+    { "param": "warmth",    "a": 0.72, "b": 0.40, "delta": -0.32 },
+    { "param": "color_temp","a": 6200, "b": 4800, "delta": -1400 }
+  ],
+  "similarity": 0.61   // 1 = identical params, 0 = maximally different
+}
+```
+
+The agent uses this to pick a winner branch without needing pixel-level comparison.
+
+---
+
 #### `GET /schema`
 Returns all valid parameters, types, ranges, and enum values. Agent calls this once at session start.
 
@@ -252,6 +377,35 @@ Returns all valid parameters, types, ranges, and enum values. Agent calls this o
 
 ---
 
+### Error response format
+
+All endpoints return errors in a consistent envelope:
+
+```json
+{
+  "error": {
+    "code": "PARAM_OUT_OF_RANGE",
+    "message": "warmth must be between 0 and 1, got 1.4",
+    "param": "warmth",
+    "received": 1.4
+  }
+}
+```
+
+Common codes:
+
+| Code | HTTP | Meaning |
+|---|---|---|
+| `PARAM_OUT_OF_RANGE` | 422 | Value outside schema bounds |
+| `UNKNOWN_PARAM` | 422 | Param not in schema |
+| `LOCKED_PARAM` | 409 | Param is in `locked_params` |
+| `MASK_NOT_FOUND` | 404 | Referenced `mask_id` doesn't exist |
+| `BRANCH_NOT_FOUND` | 404 | `branch_from` doesn't exist |
+| `CONFIDENCE_TOO_LOW` | 200 | Edit processed but `confidence < 0.3`; treat as soft warning, not error |
+| `RENDER_PENDING` | 202 | Export job queued; poll or await WebSocket event |
+
+---
+
 ### Agent decision loop (pseudocode)
 
 ```python
@@ -273,10 +427,45 @@ for each intended_edit:
 result = POST /edit { ...params, dry_run: False, branch_from: state.current_branch }
 
 # 5. Compare branches
-branch_a_state = GET /state?branch=edit_a3
-branch_b_state = GET /state?branch=edit_b2
-# pick winner by scoring diff against goal
+diff = GET /diff?branch_a=edit_a3&branch_b=edit_b2
+# score each param delta against the goal vector to pick a winner
+# (no pixel reading required — pure param comparison)
 ```
+
+---
+
+## 4b. Real-time update model
+
+The human UI and the agent API share state. When the agent mutates state, the UI must re-render without polling.
+
+**Mechanism: WebSocket connection per session**
+
+```
+ws://host/session/{session_id}/events
+```
+
+All state mutations (from agent or human) emit an event:
+
+```json
+{
+  "event": "state_changed",
+  "source": "agent",           // "agent" | "human"
+  "edit_id": "edit_a3",
+  "diff": [...],
+  "current_branch": "edit_a3"
+}
+```
+
+Other event types: `variant_ready`, `export_ready`, `agent_plan_started`, `agent_plan_cancelled`.
+
+**Concurrency / conflict model:**
+
+- State writes are **serialized** server-side (last write wins within a branch).
+- If a human drags a slider while an agent plan is in-flight:
+  1. Server emits `agent_plan_cancelled` to the agent's WebSocket.
+  2. Human's write commits immediately.
+  3. Agent receives the cancellation, reads the new `/state`, and re-plans if desired.
+- There is **no optimistic locking** in the prototype — this is acceptable for single-user sessions. Multi-user collaboration would require CRDTs or explicit lock tokens (deferred).
 
 ---
 
@@ -310,8 +499,14 @@ Human override: at any point the human can drag a slider or type a prompt — th
 
 ## 7. Prototype milestones
 
+**M0 — Session + transport layer**
+- `POST /session` with image upload (or URL reference)
+- WebSocket `/events` stub that broadcasts all state mutations
+- `GET /export` returning the unedited source image (no transforms yet)
+- Goal: end-to-end plumbing exists before any editing logic
+
 **M1 — State machine + API skeleton**
-- Implement `/state`, `/schema`, `/edit` (dry_run + commit) with in-memory store
+- Implement `/state`, `/schema`, `/edit` (dry_run + commit), `/diff`, `/variants` with in-memory store
 - No real image processing yet; fake diff responses
 - Goal: agent can run the full decision loop against mock data
 
@@ -341,7 +536,7 @@ Human override: at any point the human can drag a slider or type a prompt — th
 - **Confidence scoring**: simple cosine similarity of intent embedding vs param diff, or ask the LLM to self-report?
 - **Branch storage**: in-memory tree (fine for prototype) vs persistent (needed for async agent workflows)
 - **Style tiles**: pre-baked LUT files, or latent-space vectors that the AI interpolates at edit time?
-- **Semantic → numeric mapping**: hard-coded lookup table (fast, predictable) vs learned mapping (flexible, harder to debug)?
+- **Semantic → numeric mapping**: Start with a hard-coded linear lookup table for the prototype — each semantic axis is a weighted sum over numeric params (e.g., `warmth` → `color_temp * 0.8 + shadow_tint * 0.2`). This is fast, deterministic, and trivially invertible (numeric → semantic read-back). Replace with a learned mapping only if the hard-coded one proves too rigid. The table itself lives in a JSON config file so UX iteration doesn't require code changes.
 - **Real-time vs async**: human edits should be real-time (<100ms); agent edits can be async with a progress indicator
 
 ---
