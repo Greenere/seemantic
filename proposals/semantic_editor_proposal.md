@@ -516,9 +516,10 @@ Human override: at any point the human can drag a slider or type a prompt — th
 - Before/after compare view
 
 **M3 — Real image operations**
-- Wire numeric params to actual image transforms (sharp/Pillow)
-- Semantic → numeric mapping layer
-- Style tile blending
+- Implement `seemantic_renderer` package per `image_backend_proposal.md` (milestones R1–R4)
+- Wire numeric params to the renderer pipeline (linearize → white balance → exposure → tone curve → clarity)
+- Semantic → numeric mapping layer (weighted linear lookup table, see §8)
+- Style tile blending via param interpolation
 
 **M4 — AI intent parsing**
 - LLM call: `intent string + schema → { params, confidence }`
