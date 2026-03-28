@@ -521,14 +521,20 @@ Human override: at any point the human can drag a slider or type a prompt — th
 - Semantic → numeric mapping layer (weighted linear lookup table, see §8)
 - Style tile blending via param interpolation
 
-**M4 — AI intent parsing**
-- LLM call: `intent string + schema → { params, confidence }`
-- Confidence thresholding + human escalation flow
+**M4 — AI intent parsing** _(see `intent_parsing_proposal.md`)_
+- `claude-sonnet-4-6` via Anthropic tool use → structured `{ params, confidence, warnings, sub_intents }`
+- Dual-source confidence: LLM self-report + server-side penalty rules (boundary, large delta, locked param)
+- Compound/conflicting intent split into `sub_intents`, applied sequentially
+- Retry loop (max 2) with correction message injection on schema violations
+- Three modes: intent-only, params-only (no LLM), hybrid
 
-**M5 — Region & mask support**
-- Brush mask tool in UI
-- SAM integration for semantic region names (`"sky"`, `"subject"`)
-- Region-constrained edits
+**M5 — Region & mask support** _(see `mask_region_proposal.md`)_
+- Luminance masks (shadows/highlights/midtones) — pure numpy, no ML, < 5ms
+- Brush mask tool: client strokes → server rasterization → `.npz` storage
+- Gradient masks (linear and radial)
+- Grounded-SAM pipeline: Grounding DINO (text → box) + MobileSAM (box → mask), < 400ms on CPU
+- Per-edit mask compositing in render pipeline; feather stored separately from bitmap
+- Agent API: programmatic brush paths + semantic labels via `POST /mask`
 
 ---
 
