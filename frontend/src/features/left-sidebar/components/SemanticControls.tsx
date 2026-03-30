@@ -9,7 +9,7 @@ export function SemanticControls() {
   return (
     <Section
       title="Semantic Controls"
-      subtitle="Perceptual sliders mapped to underlying parameter state."
+      subtitle="The smallest control set needed to validate the editing model."
     >
       <div className="field-list">
         {semanticSliderDefinitions.map((slider) => (

@@ -6,6 +6,7 @@ export function PromptBar() {
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    dispatch({ type: "applyPrompt" });
   }
 
   return (
@@ -18,7 +19,7 @@ export function PromptBar() {
         placeholder="Describe the semantic edit you want to make..."
       />
       <button type="submit" className="ghost-button">
-        Interpret Prompt
+        Apply Mock Prompt
       </button>
     </form>
   );

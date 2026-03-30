@@ -37,6 +37,7 @@ This M0 is meant to establish:
 ## Related Proposals
 
 - [Semantic Editor Proposal](./proposals/semantic_editor_proposal.md)
+- [Seemantic Frontend Proposal](./proposals/seemantic_frontend_proposal.md)
 - [Aesthetic DSL Proposal](./proposals/aesthetic_dsl_proposal.md)
 
 ## Next Likely Steps

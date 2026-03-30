@@ -6,25 +6,25 @@ export function BranchTree() {
 
   return (
     <Section
-      title="Edit History"
-      subtitle="Branch-aware navigation for non-destructive exploration."
-      meta={<span className="badge">{state.branches.length} branches</span>}
+      title="Branches"
+      subtitle="Minimal branch context for the current semantic direction."
+      meta={<span className="badge">{state.branches.length} mocked</span>}
     >
       <div className="branch-list">
         {state.branches.map((branch) => (
           <button
             key={branch.id}
             type="button"
-            className={`branch-item ${branch.isCurrent ? "is-active" : ""}`}
+            className={`branch-item ${state.currentBranchId === branch.id ? "is-active" : ""}`}
             onClick={() => dispatch({ type: "selectBranch", id: branch.id })}
           >
             <div className="branch-meta">
-              <span className="branch-name" style={{ paddingLeft: `${branch.depth * 12}px` }}>
-                {branch.name}
+              <span className="branch-name">{branch.label}</span>
+              <span className="branch-tag">
+                {state.currentBranchId === branch.id ? "current" : "available"}
               </span>
-              <span className="branch-tag">{branch.isCurrent ? "current" : `depth ${branch.depth}`}</span>
             </div>
-            <span className="branch-copy">{branch.description}</span>
+            <span className="branch-copy">{branch.note}</span>
           </button>
         ))}
       </div>

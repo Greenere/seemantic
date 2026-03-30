@@ -1,46 +1,15 @@
 export type SemanticParamId = "warmth" | "drama" | "mood" | "time";
 
-export type NumericParamId =
-  | "exposure"
-  | "highlights"
-  | "shadows"
-  | "whites"
-  | "blacks"
-  | "clarity";
-
-export type ToolId = "select" | "brush" | "gradient" | "region" | "compare";
-
 export interface Branch {
   id: string;
-  name: string;
-  description: string;
-  depth: number;
-  isCurrent: boolean;
+  label: string;
+  note: string;
 }
 
-export interface StylePreset {
-  id: string;
-  name: string;
-  description: string;
-}
-
-export interface Variant {
-  id: string;
-  name: string;
-  description: string;
-}
-
-export interface Mask {
-  id: string;
-  name: string;
-  coverageLabel: string;
-}
-
-export interface DiffMetric {
-  id: string;
+export interface InterpretationMetric {
   label: string;
   value: number;
-  direction: string;
+  direction: "up" | "down" | "neutral";
 }
 
 export interface SliderDefinition<TId extends string> {
@@ -51,16 +20,12 @@ export interface SliderDefinition<TId extends string> {
 }
 
 export interface EditorState {
-  selectedTool: ToolId;
+  currentBranchId: string;
   prompt: string;
-  selectedStyleId: string;
-  selectedVariantId: string;
-  activeMaskId: string | null;
   semanticValues: Record<SemanticParamId, number>;
-  numericValues: Record<NumericParamId, number>;
-  styleStrength: number;
   branches: Branch[];
-  variants: Variant[];
-  masks: Mask[];
-  diffMetrics: DiffMetric[];
+  previewLabel: string;
+  previewNote: string;
+  lastAppliedPrompt: string;
+  interpretationMetrics: InterpretationMetric[];
 }

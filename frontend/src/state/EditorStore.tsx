@@ -7,23 +7,13 @@ import {
   useReducer,
 } from "react";
 import { initialEditorState } from "../domain/editor/mockData";
-import type {
-  NumericParamId,
-  SemanticParamId,
-  ToolId,
-  EditorState,
-} from "../domain/editor/types";
+import type { EditorState, InterpretationMetric, SemanticParamId } from "../domain/editor/types";
 
 type EditorAction =
   | { type: "setSemanticValue"; id: SemanticParamId; value: number }
-  | { type: "setNumericValue"; id: NumericParamId; value: number }
-  | { type: "setStyle"; id: string }
-  | { type: "setStyleStrength"; value: number }
-  | { type: "setVariant"; id: string }
-  | { type: "setTool"; id: ToolId }
   | { type: "setPrompt"; value: string }
   | { type: "selectBranch"; id: string }
-  | { type: "selectMask"; id: string };
+  | { type: "applyPrompt" };
 
 interface EditorStoreValue {
   state: EditorState;
@@ -32,44 +22,41 @@ interface EditorStoreValue {
 
 const EditorStoreContext = createContext<EditorStoreValue | null>(null);
 
+function getInterpretationMetrics(state: EditorState): InterpretationMetric[] {
+  return [
+    {
+      label: "Warmth",
+      value: state.semanticValues.warmth / 100,
+      direction: state.semanticValues.warmth >= 50 ? "up" : "down",
+    },
+    {
+      label: "Drama",
+      value: state.semanticValues.drama / 100,
+      direction: state.semanticValues.drama >= 50 ? "up" : "down",
+    },
+    {
+      label: "Mood",
+      value: state.semanticValues.mood / 100,
+      direction: state.semanticValues.mood >= 50 ? "down" : "up",
+    },
+  ];
+}
+
 function editorReducer(state: EditorState, action: EditorAction): EditorState {
   switch (action.type) {
-    case "setSemanticValue":
-      return {
+    case "setSemanticValue": {
+      const nextState = {
         ...state,
         semanticValues: {
           ...state.semanticValues,
           [action.id]: action.value,
         },
       };
-    case "setNumericValue":
       return {
-        ...state,
-        numericValues: {
-          ...state.numericValues,
-          [action.id]: action.value,
-        },
+        ...nextState,
+        interpretationMetrics: getInterpretationMetrics(nextState),
       };
-    case "setStyle":
-      return {
-        ...state,
-        selectedStyleId: action.id,
-      };
-    case "setStyleStrength":
-      return {
-        ...state,
-        styleStrength: action.value,
-      };
-    case "setVariant":
-      return {
-        ...state,
-        selectedVariantId: action.id,
-      };
-    case "setTool":
-      return {
-        ...state,
-        selectedTool: action.id,
-      };
+    }
     case "setPrompt":
       return {
         ...state,
@@ -78,15 +65,12 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
     case "selectBranch":
       return {
         ...state,
-        branches: state.branches.map((branch) => ({
-          ...branch,
-          isCurrent: branch.id === action.id,
-        })),
+        currentBranchId: action.id,
       };
-    case "selectMask":
+    case "applyPrompt":
       return {
         ...state,
-        activeMaskId: action.id,
+        lastAppliedPrompt: state.prompt.trim() || "No prompt provided",
       };
     default:
       return state;

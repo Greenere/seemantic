@@ -174,10 +174,8 @@ a {
 
 .tool-button,
 .ghost-button,
-.style-tile,
-.variant-card,
 .branch-item,
-.mask-card {
+.data-card {
   transition:
     transform 160ms ease,
     border-color 160ms ease,
@@ -196,19 +194,15 @@ a {
 
 .tool-button:hover,
 .ghost-button:hover,
-.style-tile:hover,
-.variant-card:hover,
 .branch-item:hover,
-.mask-card:hover {
+.data-card:hover {
   transform: translateY(-1px);
   border-color: rgba(239, 179, 95, 0.4);
 }
 
 .tool-button.is-active,
 .branch-item.is-active,
-.style-tile.is-active,
-.variant-card.is-active,
-.mask-card.is-active {
+.data-card.is-active {
   border-color: rgba(239, 179, 95, 0.9);
   background: linear-gradient(180deg, rgba(239, 179, 95, 0.2), rgba(239, 179, 95, 0.08));
   box-shadow: 0 0 0 1px rgba(239, 179, 95, 0.18) inset;
@@ -250,29 +244,14 @@ a {
   color: var(--panel-muted);
 }
 
-.style-grid,
-.variant-grid,
-.mask-grid {
+.data-grid {
   display: grid;
   gap: 12px;
 }
 
-.style-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.variant-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.mask-grid {
-  grid-template-columns: 1fr;
-}
-
-.style-tile,
-.variant-card,
+.data-card,
 .branch-item,
-.mask-card {
+.state-card {
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.03);
   border-radius: var(--radius-md);
@@ -280,18 +259,16 @@ a {
   text-align: left;
 }
 
-.style-tile-name,
-.variant-name,
+.data-card-label,
 .branch-name,
-.mask-name {
+.state-card-label {
   display: block;
   font-weight: 600;
 }
 
-.style-tile-copy,
-.variant-copy,
+.data-card-copy,
 .branch-copy,
-.mask-copy {
+.state-card-copy {
   display: block;
   margin-top: 4px;
   color: var(--panel-muted);
@@ -319,23 +296,11 @@ a {
   letter-spacing: 0.04em;
 }
 
-.canvas-layout {
-  display: grid;
-  grid-template-columns: 62px minmax(0, 1fr);
-  gap: 16px;
-  min-height: 460px;
-}
-
-.canvas-tools {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
 .canvas-stage {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-height: 100%;
 }
 
 .canvas-frame {
@@ -466,6 +431,23 @@ a {
   color: var(--panel-muted);
 }
 
+.state-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.state-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.state-card-copy {
+  margin-top: 0;
+}
+
 .footer-note {
   color: var(--panel-muted);
   font-size: 0.76rem;
@@ -475,10 +457,6 @@ a {
   .editor-shell {
     grid-template-columns: 1fr;
   }
-
-  .variant-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 720px) {
@@ -486,21 +464,7 @@ a {
     --page-padding: 12px;
   }
 
-  .canvas-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .canvas-tools {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-
   .prompt-form {
-    grid-template-columns: 1fr;
-  }
-
-  .style-grid,
-  .variant-grid {
     grid-template-columns: 1fr;
   }
 

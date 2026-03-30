@@ -5,10 +5,10 @@ import { useEditorStore } from "../../state/EditorStore";
 
 export function SemanticEditorPage() {
   const {
-    state: { branches, activeMaskId },
+    state: { branches, currentBranchId },
   } = useEditorStore();
 
-  const currentBranch = branches.find((branch) => branch.isCurrent);
+  const currentBranch = branches.find((branch) => branch.id === currentBranchId);
 
   return (
     <main className="page-shell">
@@ -21,8 +21,8 @@ export function SemanticEditorPage() {
           </p>
         </div>
         <div className="header-stats">
-          <span className="badge">Current Branch: {currentBranch?.name ?? "base"}</span>
-          <span className="badge">Active Mask: {activeMaskId ?? "none"}</span>
+          <span className="badge">Current Branch: {currentBranch?.label ?? "Base"}</span>
+          <span className="badge">Semantic Loop Prototype</span>
           <span className="badge">Frontend Only</span>
         </div>
       </div>

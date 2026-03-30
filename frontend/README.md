@@ -2,6 +2,8 @@
 
 This folder contains the M0 frontend-only prototype for the Seemantic editor. It is built with TypeScript, React, and Vite, and is organized around a modular editor shell that mirrors the semantic editor proposal.
 
+For the frontend-specific scope and milestone boundaries, see [../proposals/seemantic_frontend_proposal.md](../proposals/seemantic_frontend_proposal.md).
+
 ## Tech Stack
 
 - TypeScript
@@ -63,9 +65,9 @@ npm run preview
 ## Current M0 Scope
 
 - Three-column semantic editor layout
-- Mocked branch history and variant selection
-- Semantic and numeric control panels
-- Prompt input and AI diff inspection surface
-- Shared editor state wired through a modular React structure
+- Minimal mocked branch switching
+- Four semantic controls as the primary interaction model
+- Mock preview, prompt input, and interpretation surface
+- Shared local editor state wired through a modular React structure
 
 There is no backend, rendering pipeline, or real image-editing engine connected yet.

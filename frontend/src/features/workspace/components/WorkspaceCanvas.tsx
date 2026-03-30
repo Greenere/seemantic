@@ -2,23 +2,26 @@ import { useEditorStore } from "../../../state/EditorStore";
 
 export function WorkspaceCanvas() {
   const {
-    state: { selectedStyleId, selectedTool },
+    state: { currentBranchId, branches, previewLabel, previewNote, semanticValues },
   } = useEditorStore();
+  const currentBranch = branches.find((branch) => branch.id === currentBranchId);
 
   return (
     <div className="canvas-frame">
-      <div className="canvas-overlay" />
+      <div
+        className="canvas-overlay"
+        style={{
+          opacity: 0.5 + semanticValues.drama / 200,
+        }}
+      />
       <div className="canvas-caption">
         <div>
-          <p className="badge">Style ref · {selectedStyleId}</p>
-          <h2 className="canvas-title">Mountain dusk session</h2>
-          <p className="canvas-copy">
-            M0 ships a mocked preview surface so we can stabilize layout, interactions, and state
-            boundaries before introducing rendering or backend APIs.
-          </p>
+          <p className="badge">Branch · {currentBranch?.label ?? "Base"}</p>
+          <h2 className="canvas-title">{previewLabel}</h2>
+          <p className="canvas-copy">{previewNote}</p>
         </div>
         <div className="compare-pill">
-          <span>{selectedTool === "compare" ? "Before / After" : "Live Preview"}</span>
+          <span>Warmth {semanticValues.warmth}</span>
           <span className="compare-handle" />
         </div>
       </div>

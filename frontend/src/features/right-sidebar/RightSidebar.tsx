@@ -1,14 +1,12 @@
 import { AiDiffPanel } from "./components/AiDiffPanel";
-import { NumericControls } from "./components/NumericControls";
-import { RegionMaskPanel } from "./components/RegionMaskPanel";
+import { StateInspector } from "./components/StateInspector";
 
 export function RightSidebar() {
   return (
     <aside className="panel sidebar-panel">
       <div className="panel-scroll">
         <AiDiffPanel />
-        <NumericControls />
-        <RegionMaskPanel />
+        <StateInspector />
       </div>
     </aside>
   );

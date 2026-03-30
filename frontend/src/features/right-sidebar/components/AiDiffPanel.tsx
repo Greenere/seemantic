@@ -3,31 +3,33 @@ import { useEditorStore } from "../../../state/EditorStore";
 
 export function AiDiffPanel() {
   const {
-    state: { diffMetrics },
+    state: { interpretationMetrics, lastAppliedPrompt },
   } = useEditorStore();
 
   return (
     <Section
-      title="AI Diff"
-      subtitle="Readable interpretation of how intent maps to concrete edits."
-      meta={<span className="badge">Confidence 0.87</span>}
+      title="Mock Interpretation"
+      subtitle="A stable stand-in for future prompt-to-edit feedback."
+      meta={<span className="badge">Mocked</span>}
     >
       <div className="panel-card">
         <div className="metric-list">
-          {diffMetrics.map((metric) => (
-            <div key={metric.id} className="metric-row">
+          {interpretationMetrics.map((metric) => (
+            <div key={metric.label} className="metric-row">
               <span className="metric-name">{metric.label}</span>
               <div className="metric-bar">
                 <div className="metric-fill" style={{ width: `${metric.value * 100}%` }} />
               </div>
-              <span className="metric-value">{metric.direction}</span>
+              <span className="metric-value">
+                {metric.direction === "up" ? "rise" : metric.direction === "down" ? "fall" : "hold"}
+              </span>
             </div>
           ))}
         </div>
       </div>
       <div className="status-row">
-        <span className="status-value">No warnings</span>
-        <span className="status-copy">Dry-run mode is mocked for M0.</span>
+        <span className="status-value">Last prompt applied</span>
+        <span className="status-copy">{lastAppliedPrompt}</span>
       </div>
     </Section>
   );
